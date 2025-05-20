@@ -65,7 +65,7 @@ func (s *PostgresStore) CreateAccount(acc *Account) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Your Account Got Created %v", resp)
+	fmt.Printf("Your Account Got Created %v\n", resp)
 	return nil
 }
 func (s *PostgresStore) GetAccounts() ([]*Account, error) {
