@@ -75,7 +75,7 @@ func (s *PostgresStore) GetAccounts() ([]*Account, error) {
 		return nil, err
 	}
 
-	// defer rows.Close()
+	defer rows.Close()
 
 	accounts := []*Account{}
 	for rows.Next() {
@@ -130,5 +130,8 @@ func (s *PostgresStore) UpdateAccount(*Account) error {
 	return nil
 }
 func (s *PostgresStore) DeleteAccount(id int) error {
-	return nil
+	_, err := s.db.Query("DELETE from account where id=$1", id)
+
+	return err
+
 }
