@@ -50,7 +50,7 @@ func NewAPIserver(listenAddr string, store Storage) *APIserver {
 
 func (s *APIserver) Run() {
 	router := mux.NewRouter()
-	router.HandleFunc("/account", withJWTAuth(makeHTTPHandleFunc(s.handleAccount)))
+	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandleFunc(s.handleGetAccountByID))).Methods("GET")
 	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleDeleteAccount)).Methods("DELETE")
 	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer)).Methods("GET")
@@ -129,6 +129,12 @@ func (s *APIserver) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 	if err := s.store.CreateAccount(account); err != nil {
 		return err
 	}
+
+	tokenString, err := createJWT(account)
+	if err != nil {
+		return err
+	}
+	fmt.Println("JWT Token: ", tokenString)
 	return WriteJSON(w, http.StatusOK, account)
 }
 
@@ -170,6 +176,17 @@ func getID(r *http.Request) (int, error) {
 	//}
 	log.Printf("Requested Data For ID: %v\n", id)
 	return id, nil
+}
+
+func createJWT(account *Account) (string, error) {
+	claims := &jwt.MapClaims{
+
+		"expiresAt":     150000,
+		"accountNumber": account.Number,
+	}
+	secret := os.Getenv("SECRET")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(secret))
 }
 
 func withJWTAuth(handlerFunc http.HandlerFunc) http.HandlerFunc {
