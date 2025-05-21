@@ -49,7 +49,8 @@ func NewAPIserver(listenAddr string, store Storage) *APIserver {
 func (s *APIserver) Run() {
 	router := mux.NewRouter()
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountByID))
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountByID)).Methods("GET")
+	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleDeleteAccount)).Methods("DELETE")
 	log.Println("JSON Api Server Started At", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 }
@@ -82,9 +83,13 @@ func (s *APIserver) handleGetAccountByID(w http.ResponseWriter, r *http.Request)
 	// if err != nil {
 	// 	return err
 	// }
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-	id, _ := strconv.Atoi(idStr)
+	// vars := mux.Vars(r)
+	// idStr := vars["id"]
+	// id, _ := strconv.Atoi(idStr)
+	id, error := getID(r)
+	if error != nil {
+		return error
+	}
 	getInfoByID, err := s.store.GetAccountByID(id)
 	if err != nil {
 		return err
@@ -120,9 +125,36 @@ func (s *APIserver) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIserver) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	id, error := getID(r)
+	if error != nil {
+		return error
+	}
+	err := s.store.DeleteAccount(id)
+	if err != nil {
+		return WriteJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": fmt.Sprintf("Error deleting account: %v", err),
+		})
+	}
+	return WriteJSON(w, http.StatusOK, map[string]string{
+		"message": fmt.Sprintf("Account with ID %d deleted successfully", id),
+	})
 }
 
 func (s *APIserver) handleTransferAccount(w http.ResponseWriter, r *http.Request) error {
 	return nil
+}
+
+func getID(r *http.Request) (int, error) {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid ID: %v", id)
+	}
+	//, err := s.store.GetAccountByID(id)
+	//if err != nil {
+	//	return err
+	//}
+	log.Printf("Requested Data For ID: %v\n", id)
+	return id, nil
 }
