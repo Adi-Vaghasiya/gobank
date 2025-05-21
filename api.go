@@ -69,7 +69,7 @@ func (s *APIserver) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
-func (s *APIserver) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *APIserver) handleGetAccount(w http.ResponseWriter, _ *http.Request) error {
 	accounts, err := s.store.GetAccounts()
 	if err != nil {
 		return err
