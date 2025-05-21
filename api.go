@@ -125,12 +125,11 @@ func (s *APIserver) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIserver) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	id, error := getID(r)
-	if error != nil {
-		return error
-	}
-	err := s.store.DeleteAccount(id)
+	id, err := getID(r)
 	if err != nil {
+		return err
+	}
+	if err := s.store.DeleteAccount(id); err != nil {
 		return WriteJSON(w, http.StatusInternalServerError, map[string]string{
 			"error": fmt.Sprintf("Error deleting account: %v", err),
 		})
