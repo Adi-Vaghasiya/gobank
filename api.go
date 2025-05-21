@@ -51,6 +51,7 @@ func (s *APIserver) Run() {
 	router.HandleFunc("/account", makeHTTPHandleFunc(s.handleAccount))
 	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleGetAccountByID)).Methods("GET")
 	router.HandleFunc("/account/{id}", makeHTTPHandleFunc(s.handleDeleteAccount)).Methods("DELETE")
+	router.HandleFunc("/transfer", makeHTTPHandleFunc(s.handleTransfer)).Methods("GET")
 	log.Println("JSON Api Server Started At", s.listenAddr)
 	http.ListenAndServe(s.listenAddr, router)
 }
@@ -62,9 +63,7 @@ func (s *APIserver) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "POST" {
 		return s.handleCreateAccount(w, r)
 	}
-	if r.Method == "DELETE" {
-		return s.handleDeleteAccount(w, r)
-	}
+
 	return fmt.Errorf("method not allowed %s", r.Method)
 }
 
@@ -78,6 +77,24 @@ func (s *APIserver) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIserver) handleGetAccountByID(w http.ResponseWriter, r *http.Request) error {
+
+	if r.Method == "GET" {
+		id, error := getID(r)
+		if error != nil {
+			return error
+		}
+
+		getInfoByID, err := s.store.GetAccountByID(id)
+		if err != nil {
+			return err
+		}
+		log.Printf("Requested Data For ID: %v\n", id)
+		return WriteJSON(w, http.StatusOK, getInfoByID)
+	}
+	if r.Method == "DELETE" {
+		return s.handleDeleteAccount(w, r)
+	}
+	return fmt.Errorf("method %s not allowed", r.Method)
 	// var temp Account
 	// err := json.NewDecoder(r.Body).Decode(&temp)
 	// if err != nil {
@@ -86,17 +103,6 @@ func (s *APIserver) handleGetAccountByID(w http.ResponseWriter, r *http.Request)
 	// vars := mux.Vars(r)
 	// idStr := vars["id"]
 	// id, _ := strconv.Atoi(idStr)
-	id, error := getID(r)
-	if error != nil {
-		return error
-	}
-	getInfoByID, err := s.store.GetAccountByID(id)
-	if err != nil {
-		return err
-	}
-	log.Printf("Requested Data For ID: %v\n", id)
-	return WriteJSON(w, http.StatusOK, getInfoByID)
-
 	// start := time.Now()
 	// //badData := make(chan int)---------------------(For Test Case IF WriteJson Gives An Error)
 	// //return WriteJSON(w, http.StatusOK, badData)--^
@@ -139,8 +145,14 @@ func (s *APIserver) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 	})
 }
 
-func (s *APIserver) handleTransferAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+func (s *APIserver) handleTransfer(w http.ResponseWriter, r *http.Request) error {
+	transferReq := new(TransferAccount)
+	err := json.NewDecoder(r.Body).Decode(&transferReq)
+	if err != nil {
+		return err
+	}
+	defer r.Body.Close()
+	return WriteJSON(w, http.StatusOK, transferReq)
 }
 
 func getID(r *http.Request) (int, error) {
