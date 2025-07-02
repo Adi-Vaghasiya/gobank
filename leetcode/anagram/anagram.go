@@ -61,8 +61,9 @@ func groupAnagrams(strs []string) [][]string {
 	// Collect results
 	result := [][]string{}
 	for _, group := range anagramMap {
+		// fmt.Println(i)
 		result = append(result, group)
-		// fmt.Println(result)
+
 	}
 	return result
 }
