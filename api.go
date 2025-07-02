@@ -190,7 +190,7 @@ func createJWT(account *Account) (string, error) {
 }
 
 func permissionDenied(w http.ResponseWriter) {
-	WriteJSON(w, http.StatusBadRequest, ApiError{Error: "permissioni denied"})
+	WriteJSON(w, http.StatusBadRequest, ApiError{Error: "permission denied"})
 }
 
 func withJWTAuth(handlerFunc http.HandlerFunc, s Storage) http.HandlerFunc {
@@ -233,6 +233,7 @@ func validateJWT(tokenString string) (*jwt.Token, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+
 		return []byte(secret), nil
 	})
 }
